@@ -10,7 +10,7 @@ from tools.helper import tokenize, compute_text_length
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar, Pie, Histogram
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
@@ -30,29 +30,47 @@ model = joblib.load("../models/classifier.pkl")
 def index():
     
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
+    categories = df.iloc[:, 4:]
+    cat_names = list(categories)
+    cat_counts = [df[cat_name].sum() for cat_name in cat_names]
+    
+    categories['sum'] = categories.sum(axis=1)
+    counts = categories.groupby('sum').count()['related']
+    names = list(counts.index)
+    
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x=cat_names,
+                    y=cat_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        },
+        {
+            'data': [
+                Pie(
+                    labels=genre_names,
+                    values=genre_counts
                 )
             ],
 
             'layout': {
                 'title': 'Distribution of Message Genres',
-                'yaxis': {
-                    'title': "Count"
-                },
-                'xaxis': {
-                    'title': "Genre"
-                }
             }
         }
     ]
