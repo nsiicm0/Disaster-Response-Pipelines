@@ -1,13 +1,12 @@
 import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 import pickle
-import re
-import nltk
-nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger'])
-from nltk.tokenize import word_tokenize, WhitespaceTokenizer
-from nltk.stem import WordNetLemmatizer
+from tools.helper import tokenize, compute_text_length
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
@@ -24,51 +23,14 @@ def load_data(database_filepath):
         database_filepath: Path to the sqlite db.
 
     Returns:
-        X and Y of the dataset, plus column names.
+        X and Y of the dataset, plus labels of Y
 
     """
     engine = create_engine('sqlite:///{}'.format(database_filepath))
-    df = pd.read_sql_table('messages_cleaned', engine)
+    df = pd.read_sql_table('{}'.format(database_filepath[database_filepath.rindex('/')+1:].replace('.db','')), engine)
     X = df.message
     Y = df.drop(['id','message','original','genre'], axis=1)
-    return X, Y, Y.columns
-
-
-def tokenize(text):
-    """Tokenizes and lemmatizes text.
-
-    Args:
-        text: Text to be processed.
-
-    Returns:
-        The processed text.
-
-    """
-    tokens = WhitespaceTokenizer().tokenize(text)
-    lemmatizer = WordNetLemmatizer()
-    
-    processed_tokens = []
-    for token in tokens:
-        token = lemmatizer.lemmatize(token).lower().strip('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
-        token = re.sub(r'\[[^.,;:]]*\]', '', token)
-        
-        # add token to compiled list if not empty
-        if token != '':
-            processed_tokens.append(token)
-        
-    return processed_tokens
-
-def compute_text_length(data):
-    """Calculates the length for each string in a list of string.
-
-    Args:
-        data: Data to be analyzed.
-
-    Returns:
-        List of lengths corresponding to data.
-
-    """
-    return np.array([len(text) for text in data]).reshape(-1, 1)
+    return X, Y, list(Y)
 
 def build_model():
     """Builds the model.
@@ -96,7 +58,7 @@ def build_model():
         'features__text__vect__ngram_range':[(1,2),(2,2)],
         'clf__estimator__n_estimators':[50, 100]
     }
-    return GridSearchCV(pipeline, parameters)
+    return GridSearchCV(pipeline, parameters, cv=2)
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """Evaluates the model and prints a classification report.
@@ -111,8 +73,11 @@ def evaluate_model(model, X_test, Y_test, category_names):
         n/a
 
     """
-    y_pred = model.predict(X_test)
-    print(classification_report(Y_test.iloc[:,1:].values, np.array([x[1:] for x in y_pred]), target_names=category_names))
+    Y_pred = model.predict(X_test)
+    for i in range(0, len(category_names)):
+        print("Label:", category_names[i])
+        print(classification_report(Y_test.iloc[:,i], Y_pred[:,i]))
+    #print(classification_report(Y_test.iloc[:,1:].values, np.array([x[1:] for x in Y_pred]), target_names=category_names))
 
 
 def save_model(model, model_filepath):
