@@ -3,6 +3,19 @@
 ## About
 This project was developed during the Udacity Data Science Nanodegree. It builds upon a predefined template.
 
+## Pipeline
+
+The project contains a pipeline which follows the following process:
+
+![Process Pipeline][res/pipeline]
+
+A dataset consisting of messages and their multi-class labels are ingested during the ETL process (realized within the data/process_data.py script).
+The resulting data from the ETL process will then be stored within a sqlite database.
+
+The data from the sqlite database will be used to train the machine learning model. Before being converted to train and test data, the dataset is tokenized and lemmatized in order to remove irrelevant words. The training uses a cross-validation model with grid search to optimize parameters. (realized within the model/train_classifier.py script)
+
+The trained model will be used to predict messages, that a user can enter within the flask web app. The web app can be launched using the run.py script.
+
 ## Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
