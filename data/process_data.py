@@ -70,7 +70,7 @@ def save_data(df, database_filename):
     """
     # Store dataframe to sqlite db
     engine = create_engine('sqlite:///{}'.format(database_filename))
-    df.to_sql('{}'.format(database_filename.replace('.db','')), engine, index=False)
+    df.to_sql('{}'.format(database_filename[database_filename.rindex('/')+1:].replace('.db','')), engine, index=False)
 
 
 def main():
