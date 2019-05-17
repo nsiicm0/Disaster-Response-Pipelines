@@ -7,7 +7,7 @@ This project was developed during the Udacity Data Science Nanodegree. It builds
 
 The project contains a pipeline which follows the following process:
 
-![Process Pipeline][res/pipeline]
+![Process Pipeline](res/pipeline?raw=true)
 
 A dataset consisting of messages and their multi-class labels are ingested during the ETL process (realized within the data/process_data.py script).
 The resulting data from the ETL process will then be stored within a sqlite database.
